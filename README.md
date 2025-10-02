@@ -65,33 +65,33 @@ Create `backend/functions/.env`:
 FIREBASE_PROJECT_ID=your-project-id
 
 # Polygon Blockchain
-POLYGON_RPC_URL=https://polygon-mainnet.infura.io/v3/ceb550eff8394509a979f779be9ad5c4
-POLYGON_PRIVATE_KEY=bEnBuf/vOPFn5A5r7uqGNGagC3V8HPGyUGUA66aNgUyMNYDK7G4kDw
-DONATION_CONTRACT_ADDRESS=deployed-contract-address
+POLYGON_RPC_URL=
+POLYGON_PRIVATE_KEY=
+DONATION_CONTRACT_ADDRESS=
 AUCTION_CONTRACT_ADDRESS=deployed-contract-address
 
 # Google Gemini AI
-GEMINI_API_KEY=AIzaSyCy9UgXDmNpUKgVoS_vKVEg3XulwAlex3I
+GEMINI_API_KEY=
 
 # Payment Gateways
-PAYMAYA_PUBLIC_KEY=your-paymaya-public-key
+PAYMAYA_PUBLIC_KEY=
 PAYMAYA_SECRET_KEY=your-paymaya-secret-key
 GCASH_MERCHANT_ID=your-gcash-merchant-id
 GCASH_SECRET_KEY=your-gcash-secret-key
 
 # Multi-sig Treasury Wallet
-TREASURY_WALLET_ADDRESS=0d2df7f443ff4fb3ba2b2ac3057e95df
+TREASURY_WALLET_ADDRESS=
 \`\`\`
 
 Create `flutter_app/.env`:
 
 \`\`\`env
-FIREBASE_API_KEY=AIzaSyD1EPDM3P61fcnnVoNFO_QJqvXv8_T0ii4
-FIREBASE_APP_ID=1:708964854924:web:fc236f641e053c51aa5fa9
-FIREBASE_MESSAGING_SENDER_ID=708964854924
-FIREBASE_PROJECT_ID=careconn-79a46
-FIREBASE_STORAGE_BUCKET=careconn-79a46.firebasestorage.app
-FIREBASE_AUTH_DOMAIN=careconn-79a46.firebaseapp.com
+FIREBASE_API_KEY=
+FIREBASE_APP_ID=
+FIREBASE_MESSAGING_SENDER_ID=
+FIREBASE_PROJECT_ID=
+FIREBASE_STORAGE_BUCKET=
+FIREBASE_AUTH_DOMAIN=
 \`\`\`
 
 ### 3. Smart Contract Deployment
