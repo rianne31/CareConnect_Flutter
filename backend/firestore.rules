@@ -1,0 +1,87 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    function isAdmin() {
+      return request.auth != null && request.auth.token.admin == true;
+    }
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Patients - ADMIN ONLY (full personal data)
+    match /patients/{patientId} {
+      allow read, write: if isAdmin();
+    }
+    
+    // Public patients - De-identified data for donors
+    match /public_patients/{patientId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    
+    // Donations
+    match /donations/{donationId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
+    }
+    
+    // Blockchain transactions
+    match /blockchain_transactions/{txId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    
+    // Auctions
+    match /auctions/{auctionId} {
+      allow read: if true;
+      allow write: if isAdmin();
+      
+      // Bids subcollection
+      match /bids/{bidId} {
+        allow read: if true;
+        allow create: if isAuthenticated();
+        allow update, delete: if isAdmin();
+      }
+    }
+    
+    // Auction submissions
+    match /auction_submissions/{submissionId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin() || isOwner(resource.data.userId);
+    }
+    
+    // Donor profiles
+    match /donors/{userId} {
+      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      allow write: if isOwner(userId);
+    }
+    
+    // Donor achievements (NFT badges)
+    match /donor_achievements/{achievementId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    
+    // Analytics (admin only)
+    match /analytics/{docId} {
+      allow read, write: if isAdmin();
+    }
+    
+    // AI chat history
+    match /chat_history/{userId} {
+      allow read, write: if isOwner(userId);
+      
+      match /messages/{messageId} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+  }
+}
