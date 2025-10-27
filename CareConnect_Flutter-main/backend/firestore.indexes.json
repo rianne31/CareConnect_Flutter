@@ -1,0 +1,38 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "donations",
+      "queryScope": "COLLECTION",
+      "fields": [{ "fieldPath": "userId", "order": "ASCENDING" }, { "fieldPath": "createdAt", "order": "DESCENDING" }]
+    },
+    {
+      "collectionGroup": "donations",
+      "queryScope": "COLLECTION",
+      "fields": [{ "fieldPath": "status", "order": "ASCENDING" }, { "fieldPath": "createdAt", "order": "DESCENDING" }]
+    },
+    {
+      "collectionGroup": "auctions",
+      "queryScope": "COLLECTION",
+      "fields": [{ "fieldPath": "status", "order": "ASCENDING" }, { "fieldPath": "endTime", "order": "ASCENDING" }]
+    },
+    {
+      "collectionGroup": "bids",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [{ "fieldPath": "auctionId", "order": "ASCENDING" }, { "fieldPath": "amount", "order": "DESCENDING" }]
+    },
+    {
+      "collectionGroup": "donors",
+      "queryScope": "COLLECTION",
+      "fields": [{ "fieldPath": "tier", "order": "ASCENDING" }, { "fieldPath": "totalDonated", "order": "DESCENDING" }]
+    },
+    {
+      "collectionGroup": "public_patients",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "priority", "order": "DESCENDING" },
+        { "fieldPath": "fundingProgress", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
