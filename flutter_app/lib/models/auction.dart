@@ -23,6 +23,7 @@ class Auction {
   final String imageUrl; // Added missing property
   final String description; // Added missing property
   final int bidCount; // Added missing property
+  final double targetBid; // Added target bid for progress and UI
   final double startingBid;
   final double currentBid;
   final String? currentBidderId;
@@ -44,6 +45,7 @@ class Auction {
     required this.imageUrl,
     required this.description,
     required this.bidCount,
+    required this.targetBid,
     required this.startingBid,
     required this.currentBid,
     this.currentBidderId,
@@ -58,6 +60,18 @@ class Auction {
   });
 
   factory Auction.fromFirestore(Map<String, dynamic> data, {required String id}) {
+    DateTime _toDate(dynamic v) {
+      if (v == null) return DateTime.now();
+      if (v is DateTime) return v;
+      if (v is int) return DateTime.fromMillisecondsSinceEpoch(v);
+      if (v is num) return DateTime.fromMillisecondsSinceEpoch(v.toInt());
+      try {
+        final d = v.toDate();
+        if (d is DateTime) return d;
+      } catch (_) {}
+      return DateTime.now();
+    }
+
     return Auction(
       id: id,
       sellerId: data['sellerId'] ?? '',
@@ -67,15 +81,16 @@ class Auction {
       imageUrl: data['imageUrl'] ?? data['itemImageUrl'] ?? '',
       description: data['description'] ?? data['itemDescription'] ?? '',
       bidCount: data['bidCount'] ?? 0,
+      targetBid: (data['targetBid'] ?? data['startingBid'] ?? 0).toDouble(),
       startingBid: (data['startingBid'] ?? 0).toDouble(),
       currentBid: (data['currentBid'] ?? 0).toDouble(),
       currentBidderId: data['currentBidderId'],
-      startTime: (data['startTime'] as Timestamp).toDate(),
-      endTime: (data['endTime'] as Timestamp).toDate(),
+      startTime: _toDate(data['startTime']),
+      endTime: _toDate(data['endTime']),
       status: data['status'] ?? 'pending',
       blockchainAuctionId: data['blockchainAuctionId'],
       blockchainTxHash: data['blockchainTxHash'],
-      createdAt: (data['createdAt'] as Timestamp).toDate(),
+      createdAt: _toDate(data['createdAt']),
       minBidIncrement: (data['minBidIncrement'] ?? 0.1).toDouble(),
       tokenId: data['tokenId'],
     );

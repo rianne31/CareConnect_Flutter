@@ -170,7 +170,7 @@ class FirestoreService {
       return await _safeFirestoreOperation(() async {
         final snapshot = await _firestore
             .collection('auctions')
-            .orderBy('endDate')
+            .orderBy('endTime')
             .get();
         return snapshot.docs
             .map((doc) => Auction.fromFirestore(doc.data(), id: doc.id))
@@ -180,6 +180,35 @@ class FirestoreService {
       debugPrint('Error getting auctions: $e');
       return [];
     }
+  }
+
+  // Create a new auction with minimal required fields
+  Future<void> addAuction(String itemName, double startingBid) async {
+    return _safeFirestoreOperation(() async {
+      final now = DateTime.now();
+      final end = now.add(const Duration(days: 3));
+      await _firestore.collection('auctions').add({
+        'sellerId': 'admin',
+        'itemName': itemName,
+        'itemDescription': itemName,
+        'itemImageUrl': '',
+        'imageUrl': '',
+        'description': itemName,
+        'bidCount': 0,
+        'targetBid': startingBid * 10,
+        'startingBid': startingBid,
+        'currentBid': startingBid,
+        'currentBidderId': null,
+        'startTime': firestore.Timestamp.fromDate(now),
+        'endTime': firestore.Timestamp.fromDate(end),
+        'status': 'active',
+        'blockchainAuctionId': null,
+        'blockchainTxHash': null,
+        'createdAt': firestore.Timestamp.fromDate(now),
+        'minBidIncrement': 0.1,
+        'tokenId': null,
+      });
+    });
   }
 
   Future<Patient> getPublicPatient(String patientId) async {
@@ -313,16 +342,55 @@ class FirestoreService {
         .snapshots()
         .map((snapshot) {
           if (snapshot.exists) {
-            return snapshot.data() as Map<String, dynamic>;
-          } else {
-            return {
-              'monthlyDonations': [],
-              'donorGrowth': [],
-              'impactMetrics': {
-                'livesImpacted': 0,
-                'communitiesServed': 0,
-                'treatmentsProvided': 0
+            final raw = snapshot.data() as Map<String, dynamic>;
+
+            num _asNum(dynamic v, {num defaultValue = 0}) {
+              if (v is num) return v;
+              if (v is String) {
+                final parsed = num.tryParse(v);
+                if (parsed != null) return parsed;
               }
+              if (v is List) {
+                // If a list is provided (e.g., monthly series), use the last numeric value.
+                final numeric = v.whereType<num>().toList();
+                if (numeric.isNotEmpty) return numeric.last;
+              }
+              return defaultValue;
+            }
+
+            List<dynamic> _asList(dynamic v) {
+              if (v is List) return v;
+              if (v == null) return [];
+              return [v];
+            }
+
+            // Normalize commonly used fields to scalar numbers
+            final normalized = <String, dynamic>{
+              'totalRaised': _asNum(raw['totalRaised']),
+              'monthlyDonations': _asNum(raw['monthlyDonations']),
+              'avgDonation': _asNum(raw['avgDonation'] ?? raw['averageDonation']),
+              'successRate': _asNum(raw['successRate'] ?? raw['donorRetention']),
+              'successStories': _asList(raw['successStories']),
+              'regions': _asList(raw['regions']),
+            };
+
+            // Preserve other fields if present
+            raw.forEach((key, value) {
+              if (!normalized.containsKey(key)) {
+                normalized[key] = value;
+              }
+            });
+
+            return normalized;
+          } else {
+            // Provide UI-friendly defaults with numeric fields to avoid type mismatches
+            return {
+              'totalRaised': 0,
+              'monthlyDonations': 0,
+              'avgDonation': 0,
+              'successRate': 0,
+              'successStories': [],
+              'regions': [],
             };
           }
         });

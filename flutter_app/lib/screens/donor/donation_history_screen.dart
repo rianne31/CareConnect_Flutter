@@ -21,57 +21,33 @@ class _DonationHistoryScreenState extends State<DonationHistoryScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Donation History'),
+        title: const Text(
+          'Donation History',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
       ),
       body: Column(
         children: [
-          // Filter Chips
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                _FilterChip(
-                  label: 'All',
-                  selected: _filterStatus == 'all',
-                  onSelected: () {
-                    setState(() {
-                      _filterStatus = 'all';
-                    });
-                  },
-                ),
-                _FilterChip(
-                  label: 'Completed',
-                  selected: _filterStatus == 'completed',
-                  onSelected: () {
-                    setState(() {
-                      _filterStatus = 'completed';
-                    });
-                  },
-                ),
-                _FilterChip(
-                  label: 'Pending',
-                  selected: _filterStatus == 'pending',
-                  onSelected: () {
-                    setState(() {
-                      _filterStatus = 'pending';
-                    });
-                  },
-                ),
-                _FilterChip(
-                  label: 'Failed',
-                  selected: _filterStatus == 'failed',
-                  onSelected: () {
-                    setState(() {
-                      _filterStatus = 'failed';
-                    });
-                  },
-                ),
-              ],
+          // 🔹 Filter Chips
+          Container(
+            width: double.infinity,
+            color: Colors.grey[100],
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _buildChip('All', 'all'),
+                  _buildChip('Completed', 'completed'),
+                  _buildChip('Pending', 'pending'),
+                  _buildChip('Failed', 'failed'),
+                ],
+              ),
             ),
           ),
 
-          // Donations List
+          // 🔹 Donation List
           Expanded(
             child: FutureBuilder<List<Donation>>(
               future: _firestoreService.getDonorDonations(user!.uid),
@@ -82,7 +58,10 @@ class _DonationHistoryScreenState extends State<DonationHistoryScreen> {
 
                 if (snapshot.hasError) {
                   return Center(
-                    child: Text('Error: ${snapshot.error}'),
+                    child: Text(
+                      'Error loading donations.',
+                      style: TextStyle(color: Colors.red[400]),
+                    ),
                   );
                 }
 
@@ -93,19 +72,20 @@ class _DonationHistoryScreenState extends State<DonationHistoryScreen> {
                       children: [
                         Icon(Icons.history, size: 64, color: Colors.grey),
                         SizedBox(height: 16),
-                        Text('No donations yet'),
+                        Text(
+                          'No donations yet',
+                          style: TextStyle(color: Colors.grey),
+                        ),
                       ],
                     ),
                   );
                 }
 
                 var donations = snapshot.data!;
-
-                // Apply filter
                 if (_filterStatus != 'all') {
-                  donations = donations.where((donation) {
-                    return donation.status == _filterStatus;
-                  }).toList();
+                  donations = donations
+                      .where((d) => d.status == _filterStatus)
+                      .toList();
                 }
 
                 return RefreshIndicator(
@@ -116,8 +96,7 @@ class _DonationHistoryScreenState extends State<DonationHistoryScreen> {
                     padding: const EdgeInsets.all(16),
                     itemCount: donations.length,
                     itemBuilder: (context, index) {
-                      final donation = donations[index];
-                      return _DonationCard(donation: donation);
+                      return _DonationCard(donation: donations[index]);
                     },
                   ),
                 );
@@ -128,27 +107,23 @@ class _DonationHistoryScreenState extends State<DonationHistoryScreen> {
       ),
     );
   }
-}
 
-class _FilterChip extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final VoidCallback onSelected;
-
-  const _FilterChip({
-    required this.label,
-    required this.selected,
-    required this.onSelected,
-  });
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildChip(String label, String value) {
+    final isSelected = _filterStatus == value;
     return Padding(
       padding: const EdgeInsets.only(right: 8),
-      child: FilterChip(
-        label: Text(label),
-        selected: selected,
-        onSelected: (_) => onSelected(),
+      child: ChoiceChip(
+        label: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : Colors.black87,
+          ),
+        ),
+        selected: isSelected,
+        selectedColor: Colors.blueAccent,
+        onSelected: (_) {
+          setState(() => _filterStatus = value);
+        },
       ),
     );
   }
@@ -156,10 +131,9 @@ class _FilterChip extends StatelessWidget {
 
 class _DonationCard extends StatelessWidget {
   final Donation donation;
-
   const _DonationCard({required this.donation});
 
-  Color _getStatusColor() {
+  Color _statusColor() {
     switch (donation.status) {
       case 'completed':
         return Colors.green;
@@ -172,136 +146,125 @@ class _DonationCard extends StatelessWidget {
     }
   }
 
-  IconData _getStatusIcon() {
+  IconData _statusIcon() {
     switch (donation.status) {
       case 'completed':
         return Icons.check_circle;
       case 'pending':
-        return Icons.pending;
+        return Icons.hourglass_bottom;
       case 'failed':
-        return Icons.error;
+        return Icons.cancel;
       default:
-        return Icons.help;
+        return Icons.help_outline;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      child: InkWell(
-        onTap: () {
-          _showDonationDetails(context);
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    Formatters.formatCurrency(donation.amount),
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Chip(
-                    avatar: Icon(
-                      _getStatusIcon(),
-                      size: 16,
-                      color: _getStatusColor(),
-                    ),
-                    label: Text(
-                      donation.status.toUpperCase(),
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: _getStatusColor(),
-                      ),
-                    ),
-                    backgroundColor: _getStatusColor().withOpacity(0.1),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Patient ID: ${donation.patientId}',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeInOut,
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black12.withOpacity(0.05),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ListTile(
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        onTap: () => _showDetails(context),
+        title: Text(
+          Formatters.formatCurrency(donation.amount),
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                Icon(
+                  donation.paymentMethod == 'crypto'
+                      ? Icons.currency_bitcoin
+                      : Icons.payment,
+                  size: 14,
                   color: Colors.grey[600],
                 ),
-              ),
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  Icon(
-                    donation.paymentMethod == 'crypto' 
-                        ? Icons.currency_bitcoin 
-                        : Icons.payment,
-                    size: 16,
-                    color: Colors.grey[600],
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    donation.paymentMethod.toUpperCase(),
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Icon(Icons.calendar_today, size: 16, color: Colors.grey[600]),
-                  const SizedBox(width: 4),
-                  Text(
-                    Formatters.formatDate(donation.createdAt),
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                ],
-              ),
-              if (donation.transactionHash != null) ...[
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Icon(Icons.link, size: 16, color: Colors.blue[600]),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        'Tx: ${donation.transactionHash!.substring(0, 10)}...${donation.transactionHash!.substring(donation.transactionHash!.length - 8)}',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.blue[600],
-                          fontFamily: 'monospace',
-                        ),
-                      ),
-                    ),
-                  ],
+                const SizedBox(width: 6),
+                Text(
+                  donation.paymentMethod.toUpperCase(),
+                  style: TextStyle(color: Colors.grey[700]),
+                ),
+                const SizedBox(width: 16),
+                Icon(Icons.calendar_today,
+                    size: 14, color: Colors.grey[600]),
+                const SizedBox(width: 6),
+                Text(
+                  Formatters.formatDate(donation.createdAt),
+                  style: TextStyle(color: Colors.grey[700]),
                 ),
               ],
-            ],
-          ),
+            ),
+            if (donation.transactionHash != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Text(
+                  'Tx: ${donation.transactionHash!.substring(0, 8)}...${donation.transactionHash!.substring(donation.transactionHash!.length - 6)}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Colors.blueAccent,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+              ),
+          ],
+        ),
+        trailing: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(_statusIcon(), color: _statusColor(), size: 20),
+            const SizedBox(height: 4),
+            Text(
+              donation.status.toUpperCase(),
+              style: TextStyle(
+                color: _statusColor(),
+                fontWeight: FontWeight.bold,
+                fontSize: 10,
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  void _showDonationDetails(BuildContext context) {
+  void _showDetails(BuildContext context) {
     showModalBottomSheet(
       context: context,
+      backgroundColor: Colors.white,
       isScrollControlled: true,
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.6,
-        minChildSize: 0.4,
-        maxChildSize: 0.9,
-        expand: false,
-        builder: (context, scrollController) => SingleChildScrollView(
-          controller: scrollController,
-          padding: const EdgeInsets.all(24),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) => Padding(
+        padding: const EdgeInsets.all(24),
+        child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Center(
                 child: Container(
-                  width: 40,
+                  width: 50,
                   height: 4,
                   decoration: BoxDecoration(
                     color: Colors.grey[300],
@@ -310,26 +273,28 @@ class _DonationCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 24),
-              Text(
+              const Text(
                 'Donation Details',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                style: TextStyle(
                   fontWeight: FontWeight.bold,
+                  fontSize: 22,
                 ),
               ),
               const SizedBox(height: 24),
-              _DetailRow(label: 'Amount', value: Formatters.formatCurrency(donation.amount)),
-              _DetailRow(label: 'Status', value: donation.status.toUpperCase()),
-              _DetailRow(label: 'Payment Method', value: donation.paymentMethod.toUpperCase()),
-              _DetailRow(label: 'Patient ID', value: donation.patientId),
-              _DetailRow(label: 'Date', value: Formatters.formatDate(donation.createdAt)),
-              _DetailRow(label: 'Anonymous', value: donation.isAnonymous ? 'Yes' : 'No'),
+              _detailRow('Amount', Formatters.formatCurrency(donation.amount)),
+              _detailRow('Status', donation.status.toUpperCase()),
+              _detailRow(
+                  'Payment Method', donation.paymentMethod.toUpperCase()),
+              _detailRow('Patient ID', donation.patientId ?? 'N/A'),
+              _detailRow('Date', Formatters.formatDate(donation.createdAt)),
+              _detailRow('Anonymous', donation.isAnonymous ? 'Yes' : 'No'),
               if (donation.transactionHash != null)
-                _DetailRow(label: 'Transaction Hash', value: donation.transactionHash!),
+                _detailRow('Transaction Hash', donation.transactionHash!),
               if (donation.blockchainVerified)
-                const Padding(
-                  padding: EdgeInsets.only(top: 16),
+                Padding(
+                  padding: const EdgeInsets.only(top: 16),
                   child: Row(
-                    children: [
+                    children: const [
                       Icon(Icons.verified, color: Colors.green),
                       SizedBox(width: 8),
                       Text(
@@ -348,36 +313,24 @@ class _DonationCard extends StatelessWidget {
       ),
     );
   }
-}
 
-class _DetailRow extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const _DetailRow({required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _detailRow(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 140,
+            width: 130,
             child: Text(
               label,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(color: Colors.grey[600]),
             ),
           ),
           Expanded(
             child: Text(
               value,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w500,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.w500),
             ),
           ),
         ],

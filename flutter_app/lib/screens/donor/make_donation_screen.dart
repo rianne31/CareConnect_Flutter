@@ -17,17 +17,28 @@ class _MakeDonationScreenState extends State<MakeDonationScreen> {
   final ApiService _apiService = ApiService();
   final _formKey = GlobalKey<FormState>();
   final _amountController = TextEditingController();
-  
+
   String _paymentMethod = 'crypto';
   bool _isAnonymous = false;
   bool _isProcessing = false;
 
-  final List<double> _quickAmounts = [100, 500, 1000, 5000];
+  final List<double> _quickAmounts = [100.0, 500.0, 1000.0, 5000.0];
 
   @override
   void dispose() {
     _amountController.dispose();
     super.dispose();
+  }
+
+  Color _priorityColor(String priority) {
+    switch (priority.toLowerCase()) {
+      case 'critical':
+        return Colors.red[400]!;
+      case 'high':
+        return Colors.orange[400]!;
+      default:
+        return Colors.green[400]!;
+    }
   }
 
   Future<void> _processDonation() async {
@@ -52,15 +63,12 @@ class _MakeDonationScreenState extends State<MakeDonationScreen> {
       if (!mounted) return;
 
       if (_paymentMethod == 'crypto') {
-        // Show blockchain transaction dialog
         _showBlockchainDialog(result);
       } else {
-        // Redirect to payment gateway
         _redirectToPaymentGateway(result);
       }
     } catch (e) {
       if (!mounted) return;
-      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error: ${e.toString()}'),
@@ -128,7 +136,6 @@ class _MakeDonationScreenState extends State<MakeDonationScreen> {
   }
 
   void _redirectToPaymentGateway(Map<String, dynamic> result) {
-    // TODO: Implement payment gateway redirect
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -149,6 +156,8 @@ class _MakeDonationScreenState extends State<MakeDonationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final Color donateButtonColor = _priorityColor(widget.patient.priorityLevel);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Make a Donation'),
@@ -184,17 +193,31 @@ class _MakeDonationScreenState extends State<MakeDonationScreen> {
                           children: [
                             Text(
                               widget.patient.publicAlias,
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(fontWeight: FontWeight.bold),
                             ),
                             Text(
                               widget.patient.cancerType,
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Colors.grey[600],
-                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(color: Colors.grey[600]),
                             ),
                           ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: donateButtonColor.withOpacity(0.5),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          '${widget.patient.priorityLevel[0].toUpperCase()}${widget.patient.priorityLevel.substring(1)}',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                       ),
                     ],
@@ -207,8 +230,8 @@ class _MakeDonationScreenState extends State<MakeDonationScreen> {
               Text(
                 'Donation Amount',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                      fontWeight: FontWeight.bold,
+                    ),
               ),
               const SizedBox(height: 16),
               Wrap(
@@ -216,7 +239,7 @@ class _MakeDonationScreenState extends State<MakeDonationScreen> {
                 runSpacing: 12,
                 children: _quickAmounts.map((amount) {
                   return ChoiceChip(
-                    label: Text(Formatters.formatCurrency(amount)),
+                    label: Text(Formatters.formatCurrency(amount.toDouble())),
                     selected: _amountController.text == amount.toString(),
                     onSelected: (selected) {
                       if (selected) {
@@ -254,8 +277,8 @@ class _MakeDonationScreenState extends State<MakeDonationScreen> {
               Text(
                 'Payment Method',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                      fontWeight: FontWeight.bold,
+                    ),
               ),
               const SizedBox(height: 16),
               _PaymentMethodCard(
@@ -316,6 +339,7 @@ class _MakeDonationScreenState extends State<MakeDonationScreen> {
                 child: FilledButton(
                   onPressed: _isProcessing ? null : _processDonation,
                   style: FilledButton.styleFrom(
+                    backgroundColor: donateButtonColor,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
                   child: _isProcessing
@@ -324,12 +348,14 @@ class _MakeDonationScreenState extends State<MakeDonationScreen> {
                           width: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
                         )
                       : const Text(
                           'Donate Now',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold),
                         ),
                 ),
               ),
@@ -361,7 +387,7 @@ class _PaymentMethodCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isSelected = value == groupValue;
-    
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       color: isSelected ? Colors.blue[50] : null,

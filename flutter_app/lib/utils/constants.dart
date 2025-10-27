@@ -6,6 +6,7 @@ class AppColors {
   static const accent = Color(0xFFF59E0B); // Amber
   static const error = Color(0xFFEF4444); // Red
   static const success = Color(0xFF10B981); // Green
+  static const info = Color(0xFF3B82F6); // Info Blue
   
   static const background = Color(0xFFFAFAFA);
   static const surface = Colors.white;

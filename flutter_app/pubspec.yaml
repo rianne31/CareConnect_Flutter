@@ -41,13 +41,12 @@ dependencies:
   url_launcher: ^6.2.2
   share_plus: ^7.2.1
   image_picker: ^1.0.7
-  file_picker: ^6.1.1
   path_provider: ^2.1.1
   shared_preferences: ^2.2.2
   
   # QR Code
   qr_flutter: ^4.1.0
-  qr_code_scanner: ^1.0.1
+  # Removed qr_code_scanner due to Android AGP namespace incompatibility
   
   # Icons
   font_awesome_flutter: ^10.6.0
@@ -80,8 +79,3 @@ flutter:
     - assets/animations/
     - assets/fonts/
     - .env
-  
-  fonts:
-    - family: CustomIcons
-      fonts:
-        - asset: assets/fonts/CustomIcons.ttf

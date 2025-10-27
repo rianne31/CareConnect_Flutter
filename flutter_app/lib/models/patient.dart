@@ -57,7 +57,25 @@ class Patient {
     required this.updatedAt,
   });
 
+  // Human-readable priority level used across UI/chatbot
+  String get priorityLevel {
+    if (priority >= 8) return 'critical';
+    if (priority >= 5) return 'high';
+    return 'general';
+  }
+
   factory Patient.fromFirestore(Map<String, dynamic> data, {required String id, bool isPublic = true}) {
+    DateTime _toDate(dynamic v) {
+      if (v == null) return DateTime.now();
+      if (v is DateTime) return v;
+      if (v is int) return DateTime.fromMillisecondsSinceEpoch(v);
+      if (v is num) return DateTime.fromMillisecondsSinceEpoch(v.toInt());
+      try {
+        final d = v.toDate();
+        if (d is DateTime) return d;
+      } catch (_) {}
+      return DateTime.now();
+    }
     if (isPublic) {
       // De-identified public view
       return Patient(
@@ -73,8 +91,12 @@ class Patient {
         fundingProgress: (data['fundingProgress'] ?? 0).toDouble(),
         priority: data['priority'] ?? 5,
         impactStory: data['impactStory'],
-        createdAt: (data['createdAt'] as Timestamp).toDate(),
-        updatedAt: (data['updatedAt'] as Timestamp).toDate(),
+        status: data['status'] ?? 'active',
+        story: data['story'] ?? '',
+        diagnosisDate: _toDate(data['diagnosisDate']),
+        treatmentStage: data['treatmentStage'] ?? 'Unknown',
+        createdAt: _toDate(data['createdAt']),
+        updatedAt: _toDate(data['updatedAt']),
       );
     } else {
       // Full admin view
@@ -92,8 +114,12 @@ class Patient {
         fundingProgress: (data['fundingProgress'] ?? 0).toDouble(),
         priority: data['priority'] ?? 5,
         impactStory: data['impactStory'],
-        createdAt: (data['createdAt'] as Timestamp).toDate(),
-        updatedAt: (data['updatedAt'] as Timestamp).toDate(),
+        status: data['status'] ?? 'active',
+        story: data['story'] ?? '',
+        diagnosisDate: _toDate(data['diagnosisDate']),
+        treatmentStage: data['treatmentStage'] ?? 'Unknown',
+        createdAt: _toDate(data['createdAt']),
+        updatedAt: _toDate(data['updatedAt']),
       );
     }
   }

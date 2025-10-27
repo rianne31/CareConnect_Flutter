@@ -1,17 +1,17 @@
-const functions = require("firebase-functions")
+const { onDocumentUpdated } = require("firebase-functions/v2/firestore")
 const { db, messaging, admin } = require("../config/firebase")
 
 /**
  * Notify winner when auction is finalized
  */
-module.exports = functions.firestore.document("auctions/{auctionId}").onUpdate(async (change, context) => {
+module.exports = onDocumentUpdated({ document: "auctions/{auctionId}", region: "us-central1", serviceAccount: "careconn-79a46@appspot.gserviceaccount.com" }, async (event) => {
   try {
-    const before = change.before.data()
-    const after = change.after.data()
+    const before = event.data.before.data()
+    const after = event.data.after.data()
 
     // Check if auction was just finalized
     if (before.status !== "finalized" && after.status === "finalized") {
-      const auctionId = context.params.auctionId
+      const auctionId = event.params.auctionId
 
       if (after.winnerId) {
         // Send notification to winner

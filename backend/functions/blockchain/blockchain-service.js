@@ -1,11 +1,28 @@
 const { web3, donationContract, auctionContract, achievementNFT, account } = require("../config/web3")
 
+function ensureWeb3Ready(requireAccount = false) {
+  if (!web3) {
+    throw new Error("Web3 not initialized; blockchain features are disabled in this environment")
+  }
+  if (requireAccount && (!account || !account.address)) {
+    throw new Error("Web3 account not configured; set POLYGON_PRIVATE_KEY to enable signing")
+  }
+}
+
+function ensureContract(contract, name) {
+  if (!contract) {
+    throw new Error(`${name} contract not configured; set its address in environment variables`)
+  }
+}
+
 class BlockchainService {
   /**
    * Record fiat donation on blockchain
    */
   async recordFiatDonation(donorAddress, amount, currency, externalTxId, patientId, isAnonymous) {
     try {
+      ensureWeb3Ready(true)
+      ensureContract(donationContract, "Donation")
       const tx = donationContract.methods.recordFiatDonation(
         donorAddress,
         amount,
@@ -36,6 +53,7 @@ class BlockchainService {
    */
   async verifyDonation(txHash) {
     try {
+      ensureWeb3Ready(false)
       const receipt = await web3.eth.getTransactionReceipt(txHash)
       const transaction = await web3.eth.getTransaction(txHash)
       const block = await web3.eth.getBlock(receipt.blockNumber)
@@ -57,6 +75,8 @@ class BlockchainService {
    */
   async getDonorTotal(donorAddress) {
     try {
+      ensureWeb3Ready(false)
+      ensureContract(donationContract, "Donation")
       const total = await donationContract.methods.getDonorTotal(donorAddress).call()
       return total
     } catch (error) {
@@ -70,6 +90,8 @@ class BlockchainService {
    */
   async getDonationStats() {
     try {
+      ensureWeb3Ready(false)
+      ensureContract(donationContract, "Donation")
       const stats = await donationContract.methods.getStats().call()
       return {
         totalDonations: stats[0],
@@ -87,6 +109,8 @@ class BlockchainService {
    */
   async createAuction(seller, startingBid, duration, itemName, itemDescription, itemImageUrl, tokenURI) {
     try {
+      ensureWeb3Ready(true)
+      ensureContract(auctionContract, "Auction")
       const tx = auctionContract.methods.createAuction(
         seller,
         startingBid,
@@ -124,6 +148,8 @@ class BlockchainService {
    */
   async finalizeAuction(auctionId) {
     try {
+      ensureWeb3Ready(true)
+      ensureContract(auctionContract, "Auction")
       const tx = auctionContract.methods.finalizeAuction(auctionId)
 
       const gas = await tx.estimateGas({ from: account.address })
@@ -147,6 +173,8 @@ class BlockchainService {
    */
   async getAuction(auctionId) {
     try {
+      ensureWeb3Ready(false)
+      ensureContract(auctionContract, "Auction")
       const auction = await auctionContract.methods.getAuction(auctionId).call()
       return {
         tokenId: auction[0],
@@ -173,6 +201,8 @@ class BlockchainService {
    */
   async mintAchievementBadge(recipient, achievementType, tier, value, tokenURI) {
     try {
+      ensureWeb3Ready(true)
+      ensureContract(achievementNFT, "AchievementNFT")
       const tx = achievementNFT.methods.mintAchievement(recipient, achievementType, tier, value, tokenURI)
 
       const gas = await tx.estimateGas({ from: account.address })
@@ -201,6 +231,8 @@ class BlockchainService {
    */
   async getUserAchievements(userAddress) {
     try {
+      ensureWeb3Ready(false)
+      ensureContract(achievementNFT, "AchievementNFT")
       const achievements = await achievementNFT.methods.getUserAchievements(userAddress).call()
       return achievements
     } catch (error) {

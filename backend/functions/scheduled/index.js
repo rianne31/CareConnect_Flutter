@@ -1,11 +1,11 @@
-const functions = require("firebase-functions")
+const { onSchedule } = require("firebase-functions/v2/scheduler")
 const { db, admin } = require("../config/firebase")
 const blockchainService = require("../blockchain/blockchain-service")
 
 /**
  * Finalize expired auctions every hour
  */
-exports.finalizeExpiredAuctions = functions.pubsub.schedule("every 1 hours").onRun(async (context) => {
+exports.finalizeExpiredAuctions = onSchedule({ schedule: "every 1 hours", region: "us-central1", serviceAccount: "careconn-79a46@appspot.gserviceaccount.com" }, async (context) => {
   try {
     const now = Date.now()
 
@@ -47,7 +47,7 @@ exports.finalizeExpiredAuctions = functions.pubsub.schedule("every 1 hours").onR
 /**
  * Update donor tiers daily
  */
-exports.updateDonorTiers = functions.pubsub.schedule("every 24 hours").onRun(async (context) => {
+exports.updateDonorTiers = onSchedule({ schedule: "every 24 hours", region: "us-central1", serviceAccount: "careconn-79a46@appspot.gserviceaccount.com" }, async (context) => {
   try {
     const donors = await db.collection("donors").get()
 
@@ -83,7 +83,7 @@ exports.updateDonorTiers = functions.pubsub.schedule("every 24 hours").onRun(asy
 /**
  * Calculate donor retention metrics weekly
  */
-exports.calculateDonorRetention = functions.pubsub.schedule("every sunday 00:00").onRun(async (context) => {
+exports.calculateDonorRetention = onSchedule({ schedule: "every sunday 00:00", region: "us-central1", serviceAccount: "careconn-79a46@appspot.gserviceaccount.com" }, async (context) => {
   try {
     const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000
     const sixtyDaysAgo = Date.now() - 60 * 24 * 60 * 60 * 1000
@@ -118,7 +118,7 @@ exports.calculateDonorRetention = functions.pubsub.schedule("every sunday 00:00"
 /**
  * Send engagement reminders to inactive donors
  */
-exports.sendDonorEngagementReminders = functions.pubsub.schedule("every monday 09:00").onRun(async (context) => {
+exports.sendDonorEngagementReminders = onSchedule({ schedule: "every monday 09:00", region: "us-central1", serviceAccount: "careconn-79a46@appspot.gserviceaccount.com" }, async (context) => {
   try {
     const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000
 

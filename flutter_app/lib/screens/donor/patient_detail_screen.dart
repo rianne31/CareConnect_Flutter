@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import '../../models/patient.dart';
-import '../../services/api_service.dart';
 import '../../utils/formatters.dart';
 import 'make_donation_screen.dart';
 
@@ -15,13 +13,29 @@ class PatientDetailScreen extends StatefulWidget {
 }
 
 class _PatientDetailScreenState extends State<PatientDetailScreen> {
-  final ApiService _apiService = ApiService();
+  Color _priorityColor(String priority) {
+    switch (priority.toLowerCase()) {
+      case 'critical':
+        return Colors.red;
+      case 'high':
+        return Colors.orange;
+      case 'general':
+        return Colors.green;
+      default:
+        return Colors.grey;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final progress = widget.patient.fundingGoal > 0 
-        ? widget.patient.currentFunding / widget.patient.fundingGoal 
+    final progress = widget.patient.fundingGoal > 0
+        ? widget.patient.currentFunding / widget.patient.fundingGoal
         : 0.0;
+
+    final priorityColor = _priorityColor(widget.patient.priorityLevel);
+    final priorityLabel = widget.patient.priorityLevel.isNotEmpty
+        ? '${widget.patient.priorityLevel[0].toUpperCase()}${widget.patient.priorityLevel.substring(1)}'
+        : 'General';
 
     return Scaffold(
       appBar: AppBar(
@@ -68,6 +82,16 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
                   Chip(
                     label: Text(widget.patient.cancerType),
                     backgroundColor: Colors.white,
+                  ),
+                  const SizedBox(height: 8),
+                  // Priority Badge
+                  Chip(
+                    label: Text(priorityLabel),
+                    backgroundColor: priorityColor.withOpacity(0.3),
+                    labelStyle: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: priorityColor,
+                    ),
                   ),
                 ],
               ),
@@ -205,15 +229,18 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: FilledButton(
-            onPressed: widget.patient.status == 'active' ? () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => MakeDonationScreen(patient: widget.patient),
-                ),
-              );
-            } : null,
+            onPressed: widget.patient.status == 'active'
+                ? () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => MakeDonationScreen(patient: widget.patient),
+                      ),
+                    );
+                  }
+                : null,
             style: FilledButton.styleFrom(
+              backgroundColor: priorityColor,
               padding: const EdgeInsets.symmetric(vertical: 16),
             ),
             child: const Text(

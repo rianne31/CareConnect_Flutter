@@ -1,14 +1,14 @@
-const functions = require("firebase-functions")
+const { onDocumentCreated } = require("firebase-functions/v2/firestore")
 const { db, messaging } = require("../config/firebase")
 const blockchainService = require("../blockchain/blockchain-service")
 
 /**
  * Trigger when donation is created
  */
-module.exports = functions.firestore.document("donations/{donationId}").onCreate(async (snap, context) => {
+module.exports = onDocumentCreated({ document: "donations/{donationId}", region: "us-central1", serviceAccount: "careconn-79a46@appspot.gserviceaccount.com" }, async (event) => {
   try {
-    const donation = snap.data()
-    const donationId = context.params.donationId
+    const donation = event.data.data()
+    const donationId = event.params.donationId
 
     // Update donor profile
     const donorRef = db.collection("donors").doc(donation.userId)

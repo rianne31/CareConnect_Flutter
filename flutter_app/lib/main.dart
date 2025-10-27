@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 // Import screens
 import 'screens/admin/admin_dashboard.dart';
@@ -12,18 +13,31 @@ import 'screens/donor/donor_dashboard.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Load environment variables before any services read dotenv.env
+  await dotenv.load(fileName: '.env');
   await Firebase.initializeApp(
     options: const FirebaseOptions(
-      apiKey: "AIzaSyDjVjlcUKYUBb62x5-hMIRJUi5dRdvlxpY",
-      authDomain: "careconnect-demo.firebaseapp.com",
-      projectId: "careconnect-demo",
-      storageBucket: "careconnect-demo.appspot.com",
-      messagingSenderId: "468173045065",
-      appId: "1:468173045065:web:1d4cd24b9b9d5511ccf9d0",
-      measurementId: "G-R1CJ92RRPY"
+      apiKey: "AIzaSyD1EPDM3P61fcnnVoNFO_QJqvXv8_T0ii4",
+      authDomain: "careconn-79a46.firebaseapp.com",
+      projectId: "careconn-79a46",
+      storageBucket: "careconn-79a46.firebasestorage.app",
+      messagingSenderId: "708964854924",
+      appId: "1:708964854924:web:fc236f641e053c51aa5fa9",
+      measurementId: "G-ZWV2ES3FPC",
+      databaseURL: "https://careconn-79a46.firebaseio.com"
     ),
   );
-  runApp(const ProviderScope(child: CareConnectApp()));
+  runApp(const ProviderScope(child: FirebaseInitWrapper()));
+}
+
+class FirebaseInitWrapper extends StatelessWidget {
+  const FirebaseInitWrapper({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    // Firebase is already initialized in main(), so we can directly return the app
+    return const CareConnectApp();
+  }
 }
 
 class CareConnectApp extends StatelessWidget {

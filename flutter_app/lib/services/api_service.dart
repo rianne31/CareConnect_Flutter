@@ -5,16 +5,19 @@ import 'auth_service.dart';
 
 class ApiService {
   final AuthService _authService;
-  final String baseUrl = dotenv.env['API_BASE_URL'] ?? '';
+  final String baseUrl = dotenv.env['API_BASE_URL'] ?? 'http://127.0.0.1:5005/careconn-79a46/us-central1/api';
 
   ApiService([AuthService? authService]) : _authService = authService ?? AuthService();
 
   Future<Map<String, String>> _getHeaders() async {
     final token = await _authService.getIdToken();
-    return {
+    final headers = <String, String>{
       'Content-Type': 'application/json',
-      'Authorization': 'Bearer $token',
     };
+    if (token != null && token.isNotEmpty) {
+      headers['Authorization'] = 'Bearer $token';
+    }
+    return headers;
   }
 
   // Donations

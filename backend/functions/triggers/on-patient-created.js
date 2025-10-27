@@ -1,13 +1,13 @@
-const functions = require("firebase-functions")
+const { onDocumentCreated } = require("firebase-functions/v2/firestore")
 const { db } = require("../config/firebase")
 
 /**
  * Auto-generate de-identified patient profile when admin creates patient
  */
-module.exports = functions.firestore.document("patients/{patientId}").onCreate(async (snap, context) => {
+module.exports = onDocumentCreated({ document: "patients/{patientId}", region: "us-central1", serviceAccount: "careconn-79a46@appspot.gserviceaccount.com" }, async (event) => {
   try {
-    const patient = snap.data()
-    const patientId = context.params.patientId
+    const patient = event.data.data()
+    const patientId = event.params.patientId
 
     // Create de-identified version for public view
     const publicPatient = {

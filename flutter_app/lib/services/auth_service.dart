@@ -42,10 +42,13 @@ class AuthService {
   // Sign in with email and password
   Future<UserCredential> signInWithEmail(String email, String password) async {
     try {
-      return await _auth.signInWithEmailAndPassword(
+      final credential = await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
+      // Ensure donor profile exists for this user
+      await _ensureDonorProfileExists(credential.user!);
+      return credential;
     } catch (e) {
       throw _handleAuthError(e);
     }
@@ -155,6 +158,28 @@ class AuthService {
   // Get ID token for API calls
   Future<String?> getIdToken() async {
     return await currentUser?.getIdToken();
+  }
+
+  // Ensure donor profile exists after authentication
+  Future<void> _ensureDonorProfileExists(User user) async {
+    try {
+      final docRef = _firestore.collection('donors').doc(user.uid);
+      final doc = await docRef.get();
+      if (!doc.exists) {
+        final displayName = user.displayName ?? (user.email != null ? user.email!.split('@')[0] : 'Donor');
+        await docRef.set({
+          'email': user.email ?? '',
+          'displayName': displayName,
+          'totalDonated': 0,
+          'donationCount': 0,
+          'tier': 'Bronze',
+          'createdAt': FieldValue.serverTimestamp(),
+          'achievements': [],
+        });
+      }
+    } catch (_) {
+      // Swallow errors to avoid blocking login; UI can handle missing data gracefully
+    }
   }
 
   String _handleAuthError(dynamic e) {

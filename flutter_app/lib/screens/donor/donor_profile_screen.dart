@@ -3,7 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../services/firestore_service.dart';
 import '../../services/auth_service.dart';
 import '../../utils/formatters.dart';
-import 'loyalty_rewards_screen.dart'; // Import LoyaltyRewardsScreen
+import 'loyalty_rewards_screen.dart';
+import 'ai_chatbot_screen.dart'; // AI Chatbot Screen import
 
 class DonorProfileScreen extends StatefulWidget {
   const DonorProfileScreen({Key? key}) : super(key: key);
@@ -47,45 +48,23 @@ class _DonorProfileScreenState extends State<DonorProfileScreen> {
     final user = FirebaseAuth.instance.currentUser;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Profile'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () {
-              // TODO: Navigate to settings
-            },
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const Text('Profile')),
       body: FutureBuilder<Map<String, dynamic>?>(
         future: _firestoreService.getDonor(user!.uid),
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (snapshot.hasError) {
-            return Center(
-              child: Text('Error: ${snapshot.error}'),
-            );
-          }
+          if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
+          if (snapshot.hasError) return Center(child: Text('Error: ${snapshot.error}'));
 
           final donor = snapshot.data;
-          if (donor == null) {
-            return const Center(
-              child: Text('Donor profile not found'),
-            );
-          }
+          if (donor == null) return const Center(child: Text('Donor profile not found'));
 
           return RefreshIndicator(
-            onRefresh: () async {
-              setState(() {});
-            },
+            onRefresh: () async => setState(() {}),
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.all(16),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Profile Header
                   Card(
@@ -98,52 +77,23 @@ class _DonorProfileScreenState extends State<DonorProfileScreen> {
                             backgroundColor: Colors.blue[100],
                             child: Text(
                               (donor['name'] ?? 'D')[0].toUpperCase(),
-                              style: const TextStyle(
-                                fontSize: 48,
-                                fontWeight: FontWeight.bold,
-                              ),
+                              style: const TextStyle(fontSize: 48, fontWeight: FontWeight.bold),
                             ),
                           ),
                           const SizedBox(height: 16),
-                          Text(
-                            donor['name'] ?? 'Donor',
-                            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                          Text(donor['name'] ?? 'Donor', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
                           const SizedBox(height: 4),
-                          Text(
-                            donor['email'] ?? '',
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Colors.grey[600],
-                            ),
-                          ),
+                          Text(donor['email'] ?? '', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey[600])),
                           const SizedBox(height: 16),
                           Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              color: _getTierColor(donor['loyaltyTier'] ?? 'Bronze'),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            decoration: BoxDecoration(color: _getTierColor(donor['loyaltyTier'] ?? 'Bronze'), borderRadius: BorderRadius.circular(20)),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(
-                                  _getTierIcon(donor['loyaltyTier'] ?? 'Bronze'),
-                                  size: 20,
-                                  color: Colors.white,
-                                ),
+                                Icon(_getTierIcon(donor['loyaltyTier'] ?? 'Bronze'), size: 20, color: Colors.white),
                                 const SizedBox(width: 8),
-                                Text(
-                                  '${donor['loyaltyTier'] ?? 'Bronze'} Tier',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
+                                Text('${donor['loyaltyTier'] ?? 'Bronze'} Tier', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                               ],
                             ),
                           ),
@@ -156,60 +106,24 @@ class _DonorProfileScreenState extends State<DonorProfileScreen> {
                   // Stats Cards
                   Row(
                     children: [
-                      Expanded(
-                        child: _StatCard(
-                          title: 'Total Donated',
-                          value: Formatters.formatCurrency(donor['totalDonated'] ?? 0),
-                          icon: Icons.volunteer_activism,
-                          color: Colors.green,
-                        ),
-                      ),
+                      Expanded(child: _StatCard(title: 'Total Donated', value: Formatters.formatCurrency(donor['totalDonated'] ?? 0), icon: Icons.volunteer_activism, color: Colors.green)),
                       const SizedBox(width: 12),
-                      Expanded(
-                        child: _StatCard(
-                          title: 'Donations',
-                          value: '${donor['donationCount'] ?? 0}',
-                          icon: Icons.favorite,
-                          color: Colors.red,
-                        ),
-                      ),
+                      Expanded(child: _StatCard(title: 'Donations', value: '${donor['donationCount'] ?? 0}', icon: Icons.favorite, color: Colors.red)),
                     ],
                   ),
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      Expanded(
-                        child: _StatCard(
-                          title: 'Loyalty Points',
-                          value: '${donor['loyaltyPoints'] ?? 0}',
-                          icon: Icons.stars,
-                          color: Colors.amber,
-                        ),
-                      ),
+                      Expanded(child: _StatCard(title: 'Loyalty Points', value: '${donor['loyaltyPoints'] ?? 0}', icon: Icons.stars, color: Colors.amber)),
                       const SizedBox(width: 12),
-                      Expanded(
-                        child: _StatCard(
-                          title: 'Achievements',
-                          value: '${(donor['achievements'] as List?)?.length ?? 0}',
-                          icon: Icons.emoji_events,
-                          color: Colors.purple,
-                        ),
-                      ),
+                      Expanded(child: _StatCard(title: 'Achievements', value: '${(donor['achievements'] as List?)?.length ?? 0}', icon: Icons.emoji_events, color: Colors.purple)),
                     ],
                   ),
                   const SizedBox(height: 24),
 
-                  // Achievements Section
+                  // Achievements
                   if ((donor['achievements'] as List?)?.isNotEmpty ?? false) ...[
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        'Achievements',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
+                    Text('Achievements', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
                     const SizedBox(height: 12),
                     Card(
                       child: Padding(
@@ -217,12 +131,7 @@ class _DonorProfileScreenState extends State<DonorProfileScreen> {
                         child: Wrap(
                           spacing: 12,
                           runSpacing: 12,
-                          children: (donor['achievements'] as List).map((achievement) {
-                            return Chip(
-                              avatar: const Icon(Icons.emoji_events, size: 16),
-                              label: Text(achievement.toString()),
-                            );
-                          }).toList(),
+                          children: (donor['achievements'] as List).map((a) => Chip(avatar: const Icon(Icons.emoji_events, size: 16), label: Text(a.toString()))).toList(),
                         ),
                       ),
                     ),
@@ -233,86 +142,30 @@ class _DonorProfileScreenState extends State<DonorProfileScreen> {
                   Card(
                     child: Column(
                       children: [
-                        ListTile(
-                          leading: const Icon(Icons.stars),
-                          title: const Text('Loyalty & Rewards'),
-                          trailing: const Icon(Icons.chevron_right),
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const LoyaltyRewardsScreen(),
-                              ),
-                            );
-                          },
-                        ),
+                        _ProfileActionTile(icon: Icons.stars, label: 'Loyalty & Rewards', onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LoyaltyRewardsScreen()))),
                         const Divider(height: 1),
-                        ListTile(
-                          leading: const Icon(Icons.edit),
-                          title: const Text('Edit Profile'),
-                          trailing: const Icon(Icons.chevron_right),
-                          onTap: () {
-                            // TODO: Navigate to edit profile
-                          },
-                        ),
+                        _ProfileActionTile(icon: Icons.edit, label: 'Edit Profile', onTap: () {}),
                         const Divider(height: 1),
-                        ListTile(
-                          leading: const Icon(Icons.notifications),
-                          title: const Text('Notifications'),
-                          trailing: const Icon(Icons.chevron_right),
-                          onTap: () {
-                            // TODO: Navigate to notifications settings
-                          },
-                        ),
+                        _ProfileActionTile(icon: Icons.notifications, label: 'Notifications', onTap: () {}),
                         const Divider(height: 1),
-                        ListTile(
-                          leading: const Icon(Icons.security),
-                          title: const Text('Privacy & Security'),
-                          trailing: const Icon(Icons.chevron_right),
-                          onTap: () {
-                            // TODO: Navigate to privacy settings
-                          },
-                        ),
+                        _ProfileActionTile(icon: Icons.security, label: 'Privacy & Security', onTap: () {}),
                         const Divider(height: 1),
-                        ListTile(
-                          leading: const Icon(Icons.help),
-                          title: const Text('Help & Support'),
-                          trailing: const Icon(Icons.chevron_right),
-                          onTap: () {
-                            // TODO: Navigate to help
-                          },
-                        ),
+                        _ProfileActionTile(icon: Icons.help, label: 'Help & Support', onTap: () {}),
                         const Divider(height: 1),
-                        ListTile(
-                          leading: const Icon(Icons.logout, color: Colors.red),
-                          title: const Text(
-                            'Logout',
-                            style: TextStyle(color: Colors.red),
-                          ),
-                          onTap: () async {
-                            final confirm = await showDialog<bool>(
-                              context: context,
-                              builder: (context) => AlertDialog(
-                                title: const Text('Logout'),
-                                content: const Text('Are you sure you want to logout?'),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(context, false),
-                                    child: const Text('Cancel'),
-                                  ),
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(context, true),
-                                    child: const Text('Logout'),
-                                  ),
-                                ],
-                              ),
-                            );
-
-                            if (confirm == true && mounted) {
-                              await _authService.signOut();
-                            }
-                          },
-                        ),
+                        _ProfileActionTile(icon: Icons.logout, label: 'Logout', labelColor: Colors.red, onTap: () async {
+                          final confirm = await showDialog<bool>(
+                            context: context,
+                            builder: (_) => AlertDialog(
+                              title: const Text('Logout'),
+                              content: const Text('Are you sure you want to logout?'),
+                              actions: [
+                                TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+                                TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Logout')),
+                              ],
+                            ),
+                          );
+                          if (confirm == true && mounted) await _authService.signOut();
+                        }),
                       ],
                     ),
                   ),
@@ -326,18 +179,32 @@ class _DonorProfileScreenState extends State<DonorProfileScreen> {
   }
 }
 
+class _ProfileActionTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color? labelColor;
+  final VoidCallback onTap;
+
+  const _ProfileActionTile({required this.icon, required this.label, required this.onTap, this.labelColor});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Icon(icon, color: labelColor ?? Colors.black),
+      title: Text(label, style: TextStyle(color: labelColor ?? Colors.black)),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: onTap,
+    );
+  }
+}
+
 class _StatCard extends StatelessWidget {
   final String title;
   final String value;
   final IconData icon;
   final Color color;
 
-  const _StatCard({
-    required this.title,
-    required this.value,
-    required this.icon,
-    required this.color,
-  });
+  const _StatCard({required this.title, required this.value, required this.icon, required this.color});
 
   @override
   Widget build(BuildContext context) {
@@ -349,19 +216,9 @@ class _StatCard extends StatelessWidget {
           children: [
             Icon(icon, color: color, size: 32),
             const SizedBox(height: 12),
-            Text(
-              title,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.grey[600],
-              ),
-            ),
+            Text(title, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey[600])),
             const SizedBox(height: 4),
-            Text(
-              value,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+            Text(value, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
           ],
         ),
       ),

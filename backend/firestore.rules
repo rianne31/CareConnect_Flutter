@@ -1,6 +1,10 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // FOR DEVELOPMENT ONLY - Allow read access to all collections
+    match /{document=**} {
+      allow read: if true;
+    }
     
     function isAdmin() {
       return request.auth != null && request.auth.token.admin == true;
@@ -21,7 +25,7 @@ service cloud.firestore {
     
     // Public patients - De-identified data for donors
     match /public_patients/{patientId} {
-      allow read: if isAuthenticated();
+      allow read: if true;
       allow write: if isAdmin();
     }
     

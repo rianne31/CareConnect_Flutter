@@ -4,6 +4,7 @@ import '../../services/firestore_service.dart';
 import '../../models/auction.dart';
 import '../../utils/formatters.dart';
 import 'auction_detail_screen.dart';
+import 'ai_chatbot_screen.dart'; // 👈 Import your CareConnectBot modal
 
 class AuctionsScreen extends StatefulWidget {
   const AuctionsScreen({Key? key}) : super(key: key);
@@ -18,13 +19,15 @@ class _AuctionsScreenState extends State<AuctionsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Auctions'),
       ),
       body: Column(
         children: [
-          // Filter Chips
+          // 🔹 Filter Chips
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.all(16),
@@ -33,35 +36,23 @@ class _AuctionsScreenState extends State<AuctionsScreen> {
                 _FilterChip(
                   label: 'Active',
                   selected: _filterStatus == 'active',
-                  onSelected: () {
-                    setState(() {
-                      _filterStatus = 'active';
-                    });
-                  },
+                  onSelected: () => setState(() => _filterStatus = 'active'),
                 ),
                 _FilterChip(
                   label: 'Ending Soon',
                   selected: _filterStatus == 'ending_soon',
-                  onSelected: () {
-                    setState(() {
-                      _filterStatus = 'ending_soon';
-                    });
-                  },
+                  onSelected: () => setState(() => _filterStatus = 'ending_soon'),
                 ),
                 _FilterChip(
                   label: 'Completed',
                   selected: _filterStatus == 'completed',
-                  onSelected: () {
-                    setState(() {
-                      _filterStatus = 'completed';
-                    });
-                  },
+                  onSelected: () => setState(() => _filterStatus = 'completed'),
                 ),
               ],
             ),
           ),
 
-          // Auctions List
+          // 🔹 Auctions List
           Expanded(
             child: FutureBuilder<List<Auction>>(
               future: _firestoreService.getAuctions(),
@@ -71,9 +62,7 @@ class _AuctionsScreenState extends State<AuctionsScreen> {
                 }
 
                 if (snapshot.hasError) {
-                  return Center(
-                    child: Text('Error: ${snapshot.error}'),
-                  );
+                  return Center(child: Text('Error: ${snapshot.error}'));
                 }
 
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
@@ -90,30 +79,31 @@ class _AuctionsScreenState extends State<AuctionsScreen> {
                 }
 
                 var auctions = snapshot.data!;
-
-                // Apply filters
                 final now = DateTime.now();
+
+                // 🔹 Apply filters
                 if (_filterStatus == 'active') {
-                  auctions = auctions.where((auction) {
-                    return auction.status == 'active' && auction.endTime.isAfter(now);
-                  }).toList();
+                  auctions = auctions
+                      .where((a) =>
+                          a.status == 'active' && a.endTime.isAfter(now))
+                      .toList();
                 } else if (_filterStatus == 'ending_soon') {
-                  final endingSoonThreshold = now.add(const Duration(hours: 24));
-                  auctions = auctions.where((auction) {
-                    return auction.status == 'active' && 
-                           auction.endTime.isAfter(now) &&
-                           auction.endTime.isBefore(endingSoonThreshold);
-                  }).toList();
+                  final soon = now.add(const Duration(hours: 24));
+                  auctions = auctions
+                      .where((a) =>
+                          a.status == 'active' &&
+                          a.endTime.isAfter(now) &&
+                          a.endTime.isBefore(soon))
+                      .toList();
                 } else if (_filterStatus == 'completed') {
-                  auctions = auctions.where((auction) {
-                    return auction.status == 'completed' || auction.endTime.isBefore(now);
-                  }).toList();
+                  auctions = auctions
+                      .where((a) =>
+                          a.status == 'completed' || a.endTime.isBefore(now))
+                      .toList();
                 }
 
                 return RefreshIndicator(
-                  onRefresh: () async {
-                    setState(() {});
-                  },
+                  onRefresh: () async => setState(() {}),
                   child: ListView.builder(
                     padding: const EdgeInsets.all(16),
                     itemCount: auctions.length,
@@ -127,6 +117,20 @@ class _AuctionsScreenState extends State<AuctionsScreen> {
             ),
           ),
         ],
+      ),
+
+      // 🟢 Floating Chat Button for CareConnectBot
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.green,
+        child: const Icon(Icons.chat_bubble_outline, color: Colors.white),
+        onPressed: () {
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.transparent,
+            builder: (_) => AiChatbotScreen(),
+          );
+        },
       ),
     );
   }
@@ -181,25 +185,25 @@ class _AuctionCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Item Image Placeholder
+            // 🖼️ Auction Image
             Container(
               height: 200,
               width: double.infinity,
               decoration: BoxDecoration(
                 color: Colors.grey[200],
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(12)),
               ),
-              child: auction.imageUrl != null
+              child: (auction.imageUrl).isNotEmpty
                   ? ClipRRect(
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                      borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(12)),
                       child: Image.network(
-                        auction.imageUrl!,
+                        auction.imageUrl,
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return const Center(
-                            child: Icon(Icons.image, size: 64, color: Colors.grey),
-                          );
-                        },
+                        errorBuilder: (_, __, ___) => const Center(
+                          child: Icon(Icons.image, size: 64, color: Colors.grey),
+                        ),
                       ),
                     )
                   : const Center(
@@ -207,6 +211,7 @@ class _AuctionCard extends StatelessWidget {
                     ),
             ),
 
+            // 🏷️ Auction Info
             Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -218,17 +223,16 @@ class _AuctionCard extends StatelessWidget {
                       Expanded(
                         child: Text(
                           auction.itemName,
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleLarge
+                              ?.copyWith(fontWeight: FontWeight.bold),
                         ),
                       ),
                       if (isActive)
                         Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
+                              horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
                             color: Colors.green[100],
                             borderRadius: BorderRadius.circular(12),
@@ -249,9 +253,10 @@ class _AuctionCard extends StatelessWidget {
                     auction.description,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.grey[600],
-                    ),
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyMedium
+                        ?.copyWith(color: Colors.grey[600]),
                   ),
                   const SizedBox(height: 16),
                   Row(
@@ -262,17 +267,21 @@ class _AuctionCard extends StatelessWidget {
                         children: [
                           Text(
                             'Current Bid',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.grey[600],
-                            ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.copyWith(color: Colors.grey[600]),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             Formatters.formatCurrency(auction.currentBid),
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.green,
-                            ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleLarge
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.green,
+                                ),
                           ),
                         ],
                       ),
@@ -281,19 +290,24 @@ class _AuctionCard extends StatelessWidget {
                         children: [
                           Text(
                             isActive ? 'Ends in' : 'Ended',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.grey[600],
-                            ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.copyWith(color: Colors.grey[600]),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             isActive
                                 ? _formatTimeRemaining(timeRemaining)
                                 : Formatters.formatDate(auction.endTime),
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: isActive ? Colors.red : Colors.grey,
-                            ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color:
+                                      isActive ? Colors.red : Colors.grey[700],
+                                ),
                           ),
                         ],
                       ),
@@ -306,9 +320,10 @@ class _AuctionCard extends StatelessWidget {
                       const SizedBox(width: 4),
                       Text(
                         '${auction.bidCount} bids',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.grey[600],
-                        ),
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodySmall
+                            ?.copyWith(color: Colors.grey[600]),
                       ),
                     ],
                   ),
@@ -321,13 +336,9 @@ class _AuctionCard extends StatelessWidget {
     );
   }
 
-  String _formatTimeRemaining(Duration duration) {
-    if (duration.inDays > 0) {
-      return '${duration.inDays}d ${duration.inHours % 24}h';
-    } else if (duration.inHours > 0) {
-      return '${duration.inHours}h ${duration.inMinutes % 60}m';
-    } else {
-      return '${duration.inMinutes}m';
-    }
+  String _formatTimeRemaining(Duration d) {
+    if (d.inDays > 0) return '${d.inDays}d ${d.inHours % 24}h';
+    if (d.inHours > 0) return '${d.inHours}h ${d.inMinutes % 60}m';
+    return '${d.inMinutes}m';
   }
 }

@@ -1,4 +1,5 @@
 const admin = require("firebase-admin")
+const { FieldValue } = require("firebase-admin/firestore")
 
 const db = admin.firestore()
 const auth = admin.auth()
@@ -11,4 +12,5 @@ module.exports = {
   auth,
   storage,
   messaging,
+  FieldValue,
 }

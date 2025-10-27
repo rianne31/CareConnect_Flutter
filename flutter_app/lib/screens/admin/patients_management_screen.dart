@@ -24,41 +24,68 @@ class _PatientsManagementScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF6FAFF),
       body: Column(
         children: [
-          // Header
+          // 🌈 Gradient Header
           Container(
             padding: const EdgeInsets.all(AppSizes.paddingLarge),
-            color: AppColors.surface,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.lightBlueAccent.withOpacity(0.8),
+                  Colors.tealAccent.shade100.withOpacity(0.7),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.blueAccent.withOpacity(0.25),
+                  blurRadius: 15,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
             child: Row(
               children: [
                 Expanded(
                   child: Text(
-                    'Patient Management',
+                    '🩺 Patient Management',
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                           fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          letterSpacing: 0.5,
                         ),
                   ),
                 ),
                 SizedBox(
                   width: 300,
                   child: TextField(
+                    style: const TextStyle(color: Colors.white),
                     decoration: InputDecoration(
                       hintText: 'Search patients...',
-                      prefixIcon: const Icon(Icons.search),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
+                      hintStyle: const TextStyle(color: Colors.white70),
+                      prefixIcon: const Icon(Icons.search, color: Colors.white),
+                      filled: true,
+                      fillColor: Colors.white.withOpacity(0.1),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide:
+                            const BorderSide(color: Colors.white54, width: 1),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide:
+                            const BorderSide(color: Colors.white, width: 1.5),
                       ),
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: AppSizes.paddingMedium,
                         vertical: AppSizes.paddingSmall,
                       ),
                     ),
-                    onChanged: (value) {
-                      setState(() {
-                        _searchQuery = value.toLowerCase();
-                      });
-                    },
+                    onChanged: (value) =>
+                        setState(() => _searchQuery = value.toLowerCase()),
                   ),
                 ),
                 const SizedBox(width: AppSizes.paddingMedium),
@@ -69,66 +96,87 @@ class _PatientsManagementScreenState
                       builder: (context) => const AddPatientDialog(),
                     );
                   },
-                  icon: const Icon(Icons.add),
+                  icon: const Icon(Icons.add_circle_outline_rounded),
                   label: const Text('Add Patient'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
+                    backgroundColor: Colors.white,
+                    foregroundColor: AppColors.primary,
+                    elevation: 3,
                     padding: const EdgeInsets.symmetric(
-                      horizontal: AppSizes.paddingLarge,
-                      vertical: AppSizes.paddingMedium,
+                      horizontal: 20,
+                      vertical: 14,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
                   ),
                 ),
               ],
             ),
           ),
-          const Divider(height: 1),
 
-          // Patient list
+          // 📋 Patient List
           Expanded(
-            child: StreamBuilder<List<Patient>>(
-              stream: _firestoreService.getAdminPatients(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
+            child: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFFF6FAFF), Color(0xFFE3F2FD)],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+              ),
+              child: StreamBuilder<List<Patient>>(
+                stream: _firestoreService.getAdminPatients(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
 
-                if (snapshot.hasError) {
-                  return Center(
-                    child: Text('Error: ${snapshot.error}'),
+                  if (snapshot.hasError) {
+                    return Center(
+                      child: Text('Error: ${snapshot.error}'),
+                    );
+                  }
+
+                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    return const Center(
+                      child: Text(
+                        'No patients found',
+                        style: TextStyle(
+                          color: Colors.blueGrey,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    );
+                  }
+
+                  var patients = snapshot.data!;
+
+                  if (_searchQuery.isNotEmpty) {
+                    patients = patients.where((patient) {
+                      return (patient.name?.toLowerCase().contains(_searchQuery) ??
+                              false) ||
+                          patient.diagnosis
+                              .toLowerCase()
+                              .contains(_searchQuery) ||
+                          patient.anonymousId
+                              .toLowerCase()
+                              .contains(_searchQuery);
+                    }).toList();
+                  }
+
+                  return ListView.separated(
+                    padding: const EdgeInsets.all(AppSizes.paddingLarge),
+                    itemCount: patients.length,
+                    separatorBuilder: (_, __) =>
+                        const SizedBox(height: AppSizes.paddingMedium),
+                    itemBuilder: (context, index) {
+                      return _PatientCard(patient: patients[index]);
+                    },
                   );
-                }
-
-                if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(
-                    child: Text('No patients found'),
-                  );
-                }
-
-                var patients = snapshot.data!;
-
-                // Filter by search query
-                if (_searchQuery.isNotEmpty) {
-                  patients = patients.where((patient) {
-                    return (patient.name?.toLowerCase().contains(_searchQuery) ??
-                            false) ||
-                        patient.diagnosis.toLowerCase().contains(_searchQuery) ||
-                        patient.anonymousId.toLowerCase().contains(_searchQuery);
-                  }).toList();
-                }
-
-                return ListView.separated(
-                  padding: const EdgeInsets.all(AppSizes.paddingLarge),
-                  itemCount: patients.length,
-                  separatorBuilder: (context, index) =>
-                      const SizedBox(height: AppSizes.paddingMedium),
-                  itemBuilder: (context, index) {
-                    final patient = patients[index];
-                    return _PatientCard(patient: patient);
-                  },
-                );
-              },
+                },
+              ),
             ),
           ),
         ],
@@ -139,72 +187,64 @@ class _PatientsManagementScreenState
 
 class _PatientCard extends StatelessWidget {
   final Patient patient;
-
   const _PatientCard({required this.patient});
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 2,
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        gradient: LinearGradient(
+          colors: [
+            Colors.white.withOpacity(0.9),
+            Colors.blue[50]!.withOpacity(0.7),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.blueGrey.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
       child: Padding(
         padding: const EdgeInsets.all(AppSizes.paddingMedium),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // 🧍 Patient Header
             Row(
               children: [
                 CircleAvatar(
-                  radius: 30,
-                  backgroundColor: AppColors.primary.withOpacity(0.1),
+                  radius: 28,
+                  backgroundColor: AppColors.primary.withOpacity(0.15),
                   child: Text(
                     patient.age.toString(),
                     style: const TextStyle(
-                      fontSize: 20,
+                      fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: AppColors.primary,
                     ),
                   ),
                 ),
-                const SizedBox(width: AppSizes.paddingMedium),
+                const SizedBox(width: 14),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          Text(
-                            patient.name ?? patient.anonymousId,
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleLarge
-                                ?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                          ),
-                          const SizedBox(width: AppSizes.paddingSmall),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: AppSizes.paddingSmall,
-                              vertical: 2,
+                      Text(
+                        patient.name ?? patient.anonymousId,
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textPrimary,
                             ),
-                            decoration: BoxDecoration(
-                              color: _getPriorityColor(patient.priority)
-                                  .withOpacity(0.1),
-                              borderRadius:
-                                  BorderRadius.circular(AppSizes.radiusSmall),
-                            ),
-                            child: Text(
-                              'Priority ${patient.priority}',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: _getPriorityColor(patient.priority),
-                              ),
-                            ),
-                          ),
-                        ],
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 2),
                       Text(
                         patient.diagnosis,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -214,8 +254,25 @@ class _PatientCard extends StatelessWidget {
                     ],
                   ),
                 ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: _getPriorityColor(patient.priority).withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    'Priority ${patient.priority}',
+                    style: TextStyle(
+                      color: _getPriorityColor(patient.priority),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
                 IconButton(
-                  icon: const Icon(Icons.edit),
+                  icon: const Icon(Icons.edit_note_rounded,
+                      color: AppColors.primary),
                   onPressed: () {
                     showDialog(
                       context: context,
@@ -225,74 +282,66 @@ class _PatientCard extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: AppSizes.paddingMedium),
-            
-            // Funding progress
-            Row(
+
+            const SizedBox(height: 14),
+
+            // 💰 Funding Progress
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Funding Progress',
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                          Text(
-                            '${Formatters.formatCurrency(patient.currentFunding)} / ${Formatters.formatCurrency(patient.fundingGoal)}',
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
-                                ?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                ),
-                          ),
-                        ],
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Funding Progress'),
+                    Text(
+                      '${Formatters.formatCurrency(patient.currentFunding)} / ${Formatters.formatCurrency(patient.fundingGoal)}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
                       ),
-                      const SizedBox(height: 4),
-                      LinearProgressIndicator(
-                        value: patient.fundingProgress / 100,
-                        backgroundColor: Colors.grey[200],
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          patient.fundingProgress >= 100
-                              ? AppColors.success
-                              : AppColors.primary,
-                        ),
-                      ),
-                    ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: LinearProgressIndicator(
+                    value: patient.fundingProgress / 100,
+                    backgroundColor: Colors.grey[200],
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      patient.fundingProgress >= 100
+                          ? AppColors.success
+                          : AppColors.primary,
+                    ),
+                    minHeight: 8,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: AppSizes.paddingMedium),
-            
-            // Action buttons
+
+            const SizedBox(height: 14),
+
+            // 🔘 Action Buttons
             Row(
               children: [
                 TextButton.icon(
-                  onPressed: () {
-                    // View full details
-                  },
-                  icon: const Icon(Icons.visibility, size: 18),
+                  onPressed: () {},
+                  icon: const Icon(Icons.visibility_outlined, size: 18),
                   label: const Text('View Details'),
                 ),
-                const SizedBox(width: AppSizes.paddingSmall),
+                const SizedBox(width: 8),
                 TextButton.icon(
-                  onPressed: () {
-                    // View documents
-                  },
-                  icon: const Icon(Icons.folder, size: 18),
+                  onPressed: () {},
+                  icon: const Icon(Icons.folder_open_outlined, size: 18),
                   label: const Text('Documents'),
                 ),
                 const Spacer(),
                 Text(
                   'Updated ${Formatters.formatRelativeTime(patient.updatedAt)}',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
+                  style: const TextStyle(
+                    color: Colors.grey,
+                    fontSize: 12,
+                  ),
                 ),
               ],
             ),

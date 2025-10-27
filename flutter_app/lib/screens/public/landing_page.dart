@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../services/firestore_service.dart';
 import '../../services/blockchain_service.dart';
 import '../../utils/formatters.dart';
+import '../donor/ai_chatbot_screen.dart';
 // import '../auth/login_screen.dart'; // Commented out missing file
 
 class LandingPage extends ConsumerStatefulWidget {
@@ -248,6 +249,25 @@ class HeroSection extends ConsumerWidget {
               ),
               child: const Text('Start Donating'),
             ),
+            // Dev-only: Quick access to AI Chat for local testing
+            OutlinedButton.icon(
+              onPressed: () {
+               Navigator.push(
+                 context,
+                 MaterialPageRoute(
+                    builder: (context) => AiChatbotScreen(),
+                 ),
+               );
+              },
+              icon: const Icon(Icons.smart_toy, color: Colors.white),
+              label: const Text('Try AI Chat'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.white,
+                side: const BorderSide(color: Colors.white, width: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
+                textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ),
             OutlinedButton(
               onPressed: () {
                 // TODO: Implement login navigation
@@ -299,7 +319,7 @@ class HeroSection extends ConsumerWidget {
               _buildCounter(
                 context,
                 'Total Donations',
-                CurrencyFormatter.formatPHP(stats['totalDonations'] ?? 0),
+                CurrencyFormatter.formatPHP(((stats['totalDonations'] ?? 0) as num).toDouble()),
                 Icons.attach_money,
               ),
               const Divider(color: Colors.white24, height: 32),
@@ -430,32 +450,32 @@ class ImpactDashboard extends ConsumerWidget {
               return Column(
                 children: [
                   // Statistics Grid
-                  GridView.count(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisCount: isMobile ? 2 : (isTablet ? 3 : 4),
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
-                    childAspectRatio: isMobile ? 1.5 : 1.8,
-                    children: [
+        GridView.count(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisCount: isMobile ? 2 : (isTablet ? 3 : 4),
+          crossAxisSpacing: 16,
+          mainAxisSpacing: 16,
+          childAspectRatio: isMobile ? 1.2 : 1.5,
+          children: [
                       _buildStatCard(
                         context,
                         'Total Raised',
-                        CurrencyFormatter.formatPHP(stats['totalRaised'] ?? 0),
+                        CurrencyFormatter.formatPHP(((stats['totalRaised'] ?? 0) as num).toDouble()),
                         Icons.trending_up,
                         Colors.green,
                       ),
                       _buildStatCard(
                         context,
                         'This Month',
-                        CurrencyFormatter.formatPHP(stats['monthlyDonations'] ?? 0),
+                        CurrencyFormatter.formatPHP(((stats['monthlyDonations'] ?? 0) as num).toDouble()),
                         Icons.calendar_today,
                         Colors.blue,
                       ),
                       _buildStatCard(
                         context,
                         'Avg Donation',
-                        CurrencyFormatter.formatPHP(stats['avgDonation'] ?? 0),
+                        CurrencyFormatter.formatPHP(((stats['avgDonation'] ?? 0) as num).toDouble()),
                         Icons.show_chart,
                         Colors.purple,
                       ),
@@ -506,7 +526,7 @@ class ImpactDashboard extends ConsumerWidget {
 
   Widget _buildStatCard(BuildContext context, String label, String value, IconData icon, Color color) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -521,25 +541,32 @@ class ImpactDashboard extends ConsumerWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: color, size: 40),
-          const SizedBox(height: 16),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: isMobile ? 20 : 24,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
+          Flexible(child: Icon(icon, color: color, size: isMobile ? 32 : 36)),
+          SizedBox(height: isMobile ? 12 : 16),
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                value,
+                style: TextStyle(
+                  fontSize: isMobile ? 18 : 22,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+                textAlign: TextAlign.center,
+              ),
             ),
-            textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 14,
-              color: Colors.black54,
+          const SizedBox(height: 6),
+          Flexible(
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 13,
+                color: Colors.black54,
+              ),
+              textAlign: TextAlign.center,
             ),
-            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -556,26 +583,26 @@ class ImpactDashboard extends ConsumerWidget {
           crossAxisCount: isMobile ? 2 : (isTablet ? 3 : 4),
           crossAxisSpacing: 24,
           mainAxisSpacing: 24,
-          childAspectRatio: isMobile ? 1.2 : 1.5,
+          childAspectRatio: isMobile ? 1.0 : 1.3,
           children: [
             _buildStatCard(
               context,
               'Total Raised',
-              CurrencyFormatter.formatPHP(stats['totalRaised'] ?? 0),
+              CurrencyFormatter.formatPHP(((stats['totalRaised'] ?? 0) as num).toDouble()),
               Icons.trending_up,
               Colors.green,
             ),
             _buildStatCard(
               context,
               'This Month',
-              CurrencyFormatter.formatPHP(stats['monthlyDonations'] ?? 0),
+              CurrencyFormatter.formatPHP(((stats['monthlyDonations'] ?? 0) as num).toDouble()),
               Icons.calendar_today,
               Colors.blue,
             ),
             _buildStatCard(
               context,
               'Avg Donation',
-              CurrencyFormatter.formatPHP(stats['avgDonation'] ?? 0),
+              CurrencyFormatter.formatPHP(((stats['avgDonation'] ?? 0) as num).toDouble()),
               Icons.show_chart,
               Colors.purple,
             ),
